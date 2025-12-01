@@ -3,911 +3,610 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工资计算器（带历史回填功能）</title>
+    <title>新版工资计算器（修复版）</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "微软雅黑", Arial, sans-serif;
+            font-family: "微软雅黑", "Segoe UI", Roboto, sans-serif;
         }
         body {
-            background: #f5f7fa;
-            padding: 20px;
+            background: #f0f2f5;
+            padding: 15px;
+            color: #333;
         }
         .container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
         h1 {
             text-align: center;
-            color: #2d3748;
+            color: #ff6700; /* 小米橙 */
             margin-bottom: 20px;
-            font-size: 24px;
+            font-size: 22px;
         }
+        
+        /* 规则卡片 */
         .rule-card {
-            background: #f0f8fb;
+            background: #fff6e8;
             padding: 15px;
             border-radius: 8px;
-            margin-bottom: 30px;
-            border-left: 4px solid #4299e1;
+            margin-bottom: 25px;
+            border-left: 4px solid #ff6700;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #666;
         }
         .rule-card h3 {
-            color: #2d3748;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        .rule-card p {
-            color: #4a5568;
-            font-size: 14px;
-            margin: 5px 0;
-            line-height: 1.5;
+            color: #d95e00;
+            margin-bottom: 8px;
+            font-size: 15px;
         }
         .rule-card span {
-            color: #e53e3e;
-            font-weight: 600;
+            font-weight: bold;
+            color: #d95e00;
         }
+
+        /* 表单样式 */
+        .section-title {
+            display: flex;
+            align-items: center;
+            margin: 25px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .section-badge {
+            background: #e0e0e0;
+            color: #555;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+
         .form-group {
             margin-bottom: 15px;
         }
         label {
             display: block;
             margin-bottom: 6px;
-            color: #4a5568;
-            font-weight: 500;
+            color: #555;
             font-size: 14px;
+            font-weight: 500;
         }
+        
+        /* 修复溢出的关键样式：使用 flex-wrap */
         .input-group {
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap; /* 关键：允许换行 */
         }
-        input {
+        
+        input, select {
             flex: 1;
+            min-width: 120px; /* 最小宽度，防止太窄 */
             padding: 10px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 14px;
-            transition: border 0.3s;
+            transition: all 0.3s;
         }
-        input:focus {
+        input:focus, select:focus {
             outline: none;
-            border-color: #4299e1;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+            border-color: #ff6700;
+            box-shadow: 0 0 0 2px rgba(255, 103, 0, 0.1);
         }
-        input.error {
-            border-color: #e53e3e;
-        }
+
+        /* 达成率标签样式 */
         .rate-tag {
-            background: #e8f4f8;
-            color: #2d3748;
+            background: #f0f9eb;
+            color: #67c23a;
             padding: 10px 15px;
             border-radius: 6px;
             font-weight: 600;
-            min-width: 120px;
+            font-size: 13px;
+            white-space: nowrap; /* 防止文字折行 */
             text-align: center;
         }
-        .fixed-item {
-            background: #f8f9fa;
-            padding: 18px;
-            border-radius: 8px;
-            margin: 25px 0;
+        /* 手机端适配：达成率标签占满一行 */
+        @media (max-width: 600px) {
+            .rate-tag {
+                width: 100%; 
+                margin-top: 5px;
+            }
+            .input-group input {
+                width: 100%; /* 手机端输入框占满 */
+                flex: 100%;
+            }
         }
-        .fixed-item h3 {
-            color: #2d3748;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        .fixed-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .fixed-row:last-child {
-            border-bottom: none;
-        }
-        .fixed-label {
-            color: #4a5568;
-            font-size: 14px;
-        }
-        .fixed-value {
-            color: #2d3748;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        .performance-status {
-            color: #e53e3e;
-            font-weight: 600;
-        }
+
+        /* 按钮组 */
         .btn-group {
             display: flex;
             gap: 15px;
-            margin: 25px 0;
+            margin: 30px 0;
         }
         button {
             flex: 1;
-            padding: 12px;
+            padding: 14px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: bold;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: 0.2s;
         }
         #calcBtn {
-            background: #4299e1;
+            background: linear-gradient(135deg, #ff6700, #ff8a00);
             color: white;
+            box-shadow: 0 4px 10px rgba(255, 103, 0, 0.3);
         }
-        #calcBtn:hover {
-            background: #3182ce;
-        }
-        #calcBtn:active {
-            background: #2b6cb0;
-        }
+        #calcBtn:active { transform: scale(0.98); }
         #resetBtn {
-            background: #f7fafc;
-            color: #4a5568;
-            border: 1px solid #e2e8f0;
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #e0e0e0;
         }
-        #resetBtn:hover {
-            background: #edf2f7;
-        }
-        .result {
-            margin: 20px 0;
-            padding: 20px;
-            background: #e8f4f8;
+
+        /* 结果展示区 */
+        .result-box {
+            background: #fffbf0;
+            border: 1px solid #ffe4b5;
             border-radius: 8px;
+            padding: 20px;
             text-align: center;
         }
-        .result h2 {
-            color: #2d3748;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        #resultValue {
+        .final-price {
             font-size: 36px;
+            color: #ff6700;
             font-weight: bold;
-            color: #4299e1;
+            margin: 10px 0;
         }
-        .copy-btn {
-            padding: 8px 20px;
-            background: #48bb78;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-        .copy-btn:hover {
-            background: #38a169;
-        }
-        .history {
-            margin-top: 30px;
-        }
-        .history h3 {
-            color: #4a5568;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        #historyList {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 10px;
-        }
-        /* 修改后的历史记录样式 */
-        .history-item {
-            padding: 12px;
-            border-bottom: 1px solid #f7fafc;
-            font-size: 13px;
-            cursor: pointer; /* 鼠标变手型 */
-            transition: all 0.2s;
-            border-radius: 4px;
-            position: relative;
-        }
-        .history-item:hover {
-            background-color: #ebf8ff; /* 悬停高亮 */
-            border-left: 3px solid #4299e1;
-            padding-left: 9px; /* 保持内容位置平衡 */
-        }
-        .history-item::after {
-            content: '点击恢复';
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 12px;
-            color: #4299e1;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .history-item:hover::after {
-            opacity: 1;
-        }
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        .history-header {
+        .detail-row {
             display: flex;
             justify-content: space-between;
-            color: #2d3748;
-            font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 14px;
+            margin: 8px 0;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 5px;
         }
-        .history-detail {
-            color: #718096;
-            line-height: 1.4;
+        .detail-row:last-child { border: none; }
+        .score-highlight { color: #ff6700; font-weight: bold; }
+
+        /* 历史记录 */
+        .history-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
         }
-        #clearHistory {
-            width: 100%;
-            margin-top: 10px;
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .history-item {
             padding: 10px;
-            background: #fef2f2;
-            color: #e53e3e;
-            border: 1px solid #fee2e2;
-            border-radius: 6px;
-            font-size: 14px;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 13px;
+            color: #666;
             cursor: pointer;
-        }
-        #clearHistory:hover {
-            background: #fed7d7;
-        }
-        .tip {
-            font-size: 12px;
-            color: #718096;
-            margin-top: 15px;
-            text-align: center;
-        }
-        /* 缺口计算样式 */
-        .gap-calculator {
-            background: #fdf2f8;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 30px 0;
-            border-left: 4px solid #9f7aea;
-        }
-        .gap-calculator h3 {
-            color: #2d3748;
-            margin-bottom: 15px;
-            font-size: 16px;
             display: flex;
-            align-items: center;
-            gap: 8px;
+            justify-content: space-between;
         }
-        .gap-calculator h3 svg {
-            width: 20px;
-            height: 20px;
-            fill: #9f7aea;
+        .history-item:hover { background: #f9f9f9; color: #ff6700; }
+
+        /* 错误提示 */
+        .error-msg {
+            color: #f56c6c;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
         }
-        .gap-summary {
-            background: white;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            color: #4a5568;
+        input.error { border-color: #f56c6c; }
+
+        /* 缺口计算器 */
+        .gap-calculator {
+            margin-top: 20px;
+            background: #f4f4f5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #909399;
         }
-        .gap-summary span {
-            color: #e53e3e;
-            font-weight: 600;
-        }
-        .gap-success {
-            color: #48bb78 !important;
-        }
-        .gap-items-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        @media (max-width: 768px) {
-            .gap-items-container {
-                grid-template-columns: 1fr;
-            }
+        .gap-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
         }
         .gap-item {
             background: white;
-            padding: 15px;
-            border-radius: 6px;
-        }
-        .gap-item h4 {
-            color: #2d3748;
-            font-size: 14px;
+            padding: 10px;
             margin-bottom: 8px;
-        }
-        .gap-detail {
+            border-radius: 4px;
             font-size: 13px;
-            color: #4a5568;
-            line-height: 1.6;
-        }
-        .gap-number {
-            color: #9f7aea;
-            font-weight: 600;
-        }
-        .gap-tip {
-            color: #718096;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-        .error-tip {
-            color: #e53e3e;
-            font-size: 12px;
-            margin-top: 4px;
-            display: none;
-        }
-        /* 计算状态提示 */
-        .calc-status {
-            text-align: center;
-            color: #4299e1;
-            font-size: 14px;
-            margin: 10px 0;
-            display: none;
-        }
-        /* 适配5个输入项的布局 */
-        .input-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        @media (max-width: 768px) {
-            .input-grid {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>工资计算器（点击记录可回填）</h1>
 
-        <div class="rule-card">
-            <h3>📋 工资计算规则（最终确认）</h3>
-            <p>1. 综合达成率 = 主推40% + 销售额30% + 非手机10% + DSR10% + DOS10%（5项均<span>封顶130%</span>）</p>
-            <p>2. 绩效基数 = 基本工资×50%，绩效发放：</p>
-            <p>   - 综合达成率 < 70%：无绩效（绩效=0）</p>
-            <p>   - 70% ≤ 综合达成率 < 100%：绩效=绩效基数×综合达成率（如80%→×0.8）</p>
-            <p>   - 综合达成率 ≥ 100%：绩效=绩效基数×<span>1.2倍</span>（固定上浮20%）</p>
-            <p>3. 最终工资 = 基本工资 + 实际绩效 + 餐补（固定695元）</p>
-        </div>
+<div class="container">
+    <h1>小米之家工资计算器 (新版)</h1>
 
-        <div class="form-group">
-            <label for="baseSalary">基本工资（元）<span style="color: #e53e3e;">*</span></label>
-            <input type="number" id="baseSalary" placeholder="请输入基本工资（如10000）" min="1" step="1">
-            <div class="error-tip" id="baseSalaryError">请输入有效的基本工资（大于0）</div>
-        </div>
-
-        <h3 style="color: #4a5568; font-size: 16px; margin: 20px 0 15px;">任务目标与实际完成（填写即算缺口）</h3>
-        
-        <div class="input-grid">
-            <div class="form-group">
-                <label>主推（占比40%）<span style="color: #e53e3e;">*</span></label>
-                <div class="input-group">
-                    <input type="number" id="mainPushTarget" placeholder="任务目标" min="1" step="1">
-                    <input type="number" id="mainPushActual" placeholder="实际完成" min="0" step="1">
-                    <div class="rate-tag" id="mainPushRateTag">达成率：--%</div>
-                </div>
-                <div class="error-tip" id="mainPushError">请填写主推的任务目标和实际完成</div>
-            </div>
-
-            <div class="form-group">
-                <label>销售额（占比30%）<span style="color: #e53e3e;">*</span></label>
-                <div class="input-group">
-                    <input type="number" id="salesTarget" placeholder="任务目标" min="1" step="1">
-                    <input type="number" id="salesActual" placeholder="实际完成" min="0" step="1">
-                    <div class="rate-tag" id="salesRateTag">达成率：--%</div>
-                </div>
-                <div class="error-tip" id="salesError">请填写销售额的任务目标和实际完成</div>
-            </div>
-
-            <div class="form-group">
-                <label>非手机（占比10%）<span style="color: #e53e3e;">*</span></label>
-                <div class="input-group">
-                    <input type="number" id="nonPhoneTarget" placeholder="任务目标" min="1" step="1">
-                    <input type="number" id="nonPhoneActual" placeholder="实际完成" min="0" step="1">
-                    <div class="rate-tag" id="nonPhoneRateTag">达成率：--%</div>
-                </div>
-                <div class="error-tip" id="nonPhoneError">请填写非手机的任务目标和实际完成</div>
-            </div>
-
-            <div class="form-group">
-                <label>DSR（占比10%）<span style="color: #e53e3e;">*</span></label>
-                <div class="input-group">
-                    <input type="number" id="dsrTarget" placeholder="任务目标（如95）" min="1" step="0.1">
-                    <input type="number" id="dsrActual" placeholder="实际完成（如96）" min="0" step="0.1">
-                    <div class="rate-tag" id="dsrRateTag">达成率：--%</div>
-                </div>
-                <div class="error-tip" id="dsrError">请填写DSR的任务目标和实际完成</div>
-            </div>
-
-            <div class="form-group">
-                <label>DOS（占比10%）<span style="color: #e53e3e;">*</span></label>
-                <div class="input-group">
-                    <input type="number" id="dosTarget" placeholder="任务目标（如90）" min="1" step="0.1">
-                    <input type="number" id="dosActual" placeholder="实际完成（如92）" min="0" step="0.1">
-                    <div class="rate-tag" id="dosRateTag">达成率：--%</div>
-                </div>
-                <div class="error-tip" id="dosError">请填写DOS的任务目标和实际完成</div>
-            </div>
-        </div>
-
-        <div class="gap-calculator">
-            <h3>
-                <svg viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                </svg>
-                70%综合达成率缺口计算（填写即显结果）
-            </h3>
-            <div class="gap-summary" id="gapSummary">
-                请填写至少1个板块的目标和实际完成，缺口自动计算
-            </div>
-
-            <div class="gap-items-container">
-                <div class="gap-item">
-                    <h4>方案1：仅提升「主推」</h4>
-                    <div class="gap-detail" id="mainPushGap">
-                        待补充主推的任务目标和实际完成
-                    </div>
-                    <div class="gap-tip" id="mainPushGapTip"></div>
-                </div>
-
-                <div class="gap-item">
-                    <h4>方案2：仅提升「销售额」</h4>
-                    <div class="gap-detail" id="salesGap">
-                        待补充销售额的任务目标和实际完成
-                    </div>
-                    <div class="gap-tip" id="salesGapTip"></div>
-                </div>
-
-                <div class="gap-item">
-                    <h4>方案3：仅提升「非手机」</h4>
-                    <div class="gap-detail" id="nonPhoneGap">
-                        待补充非手机的任务目标和实际完成
-                    </div>
-                    <div class="gap-tip" id="nonPhoneGapTip"></div>
-                </div>
-
-                <div class="gap-item">
-                    <h4>方案4：仅提升「DSR」</h4>
-                    <div class="gap-detail" id="dsrGap">
-                        待补充DSR的任务目标和实际完成
-                    </div>
-                    <div class="gap-tip" id="dsrGapTip"></div>
-                </div>
-
-                <div class="gap-item">
-                    <h4>方案5：仅提升「DOS」</h4>
-                    <div class="gap-detail" id="dosGap">
-                        待补充DOS的任务目标和实际完成
-                    </div>
-                    <div class="gap-tip" id="dosGapTip"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="fixed-item">
-            <h3>📊 计算明细</h3>
-            <div class="fixed-row">
-                <div class="fixed-label">绩效基数（基本工资×50%）</div>
-                <div class="fixed-value" id="performanceBase">¥ 0.00</div>
-            </div>
-            <div class="fixed-row">
-                <div class="fixed-label">综合达成率（已封顶处理）</div>
-                <div class="fixed-value" id="totalRate">--%</div>
-            </div>
-            <div class="fixed-row">
-                <div class="fixed-label">实际绩效（含1.2倍上浮）</div>
-                <div class="fixed-value">
-                    <span id="actualPerformance">¥ 0.00</span>
-                    <span class="performance-status" id="performanceStatus"></span>
-                </div>
-            </div>
-            <div class="fixed-row">
-                <div class="fixed-label">餐补（固定）</div>
-                <div class="fixed-value" id="mealSubsidy">¥ 695.00</div>
-            </div>
-        </div>
-
-        <div class="calc-status" id="calcStatus">计算中...</div>
-
-        <div class="btn-group">
-            <button id="calcBtn">计算最终工资</button>
-            <button id="resetBtn">重置所有输入</button>
-        </div>
-
-        <div class="result">
-            <h2>最终工资</h2>
-            <div id="resultValue">¥ 0.00</div>
-            <button class="copy-btn" id="copyResult">复制结果</button>
-        </div>
-
-        <div class="history">
-            <h3>历史计算记录（点击某条可恢复数据）</h3>
-            <div id="historyList"></div>
-            <button id="clearHistory">清空历史记录</button>
-        </div>
-
-        <p class="tip">数据仅保存在本地，隐私安全 | 计算按钮100%生效 | 点击历史记录可一键填入</p>
+    <div class="rule-card">
+        <h3>📊 考核新规 (图片版)</h3>
+        <p>1. <b>销售指标 (权重70%)</b>：销售额50% + 主推40% + 非手机10% (单项计算达成率，加权后封顶130%)。</p>
+        <p>2. <b>DSR (权重10%)</b>：若>9分，得分=(分值-9)×100；若≤9分，得0分。</p>
+        <p>3. <b>库存周转 (权重10%)</b>：21-28天(100分)，28-35天或14-21天(80分)，其他依次递减。</p>
+        <p>4. <b>分公司评价 (权重10%)</b>：S(10分) A(9分) B(7分) C(2分)。</p>
+        <p>5. <b>最终薪资</b>：总分<70无绩效；70-100按比例；≥100拿1.2倍。</p>
     </div>
 
-    <script>
-        // 工具函数：获取输入值（默认0，确保是数字）
-        function getInputVal(id) {
-            const element = document.getElementById(id);
-            if (!element) return 0; // 防止找不到元素报错
-            const val = element.value.trim();
-            return val ? Number(val) : 0;
-        }
+    <!-- 基本工资 -->
+    <div class="form-group">
+        <label>基本工资 (元) <span style="color:red">*</span></label>
+        <input type="number" id="baseSalary" placeholder="例如：5000">
+    </div>
 
-        // 计算单个板块的达成率（返回：达成率、目标、实际）
-        function calcSingleRate(targetId, actualId, tagId) {
-            const target = getInputVal(targetId);
-            const actual = getInputVal(actualId);
-            let rate = 0;
-            if (target > 0) {
-                rate = (actual / target) * 100;
-                rate = Math.min(rate, 130); // 封顶130%
-            }
-            // 更新达成率标签
-            const tagEl = document.getElementById(tagId);
-            if(tagEl) tagEl.textContent = `达成率：${rate.toFixed(1)}%`;
-            return { rate, target, actual };
-        }
+    <!-- 板块1：销售指标 (70%) -->
+    <div class="section-title">
+        1. 销售指标 (占比70%)
+        <span class="section-badge">综合封顶130%</span>
+    </div>
+    
+    <!-- 销售额 -->
+    <div class="form-group">
+        <label>销售额 (占比50%)</label>
+        <div class="input-group">
+            <input type="number" id="salesTarget" placeholder="目标值" oninput="liveCalc()">
+            <input type="number" id="salesActual" placeholder="实际完成" oninput="liveCalc()">
+            <div class="rate-tag" id="salesRateDisp">0%</div>
+        </div>
+    </div>
 
-        // 计算当前综合达成率（用于汇总显示）
-        function calcTotalRate() {
-            const { rate: mainPushRate } = calcSingleRate('mainPushTarget', 'mainPushActual', 'mainPushRateTag');
-            const { rate: salesRate } = calcSingleRate('salesTarget', 'salesActual', 'salesRateTag');
-            const { rate: nonPhoneRate } = calcSingleRate('nonPhoneTarget', 'nonPhoneActual', 'nonPhoneRateTag');
-            const { rate: dsrRate } = calcSingleRate('dsrTarget', 'dsrActual', 'dsrRateTag');
-            const { rate: dosRate } = calcSingleRate('dosTarget', 'dosActual', 'dosRateTag');
+    <!-- 主推 -->
+    <div class="form-group">
+        <label>主推产品 (占比40%)</label>
+        <div class="input-group">
+            <input type="number" id="mainTarget" placeholder="目标值" oninput="liveCalc()">
+            <input type="number" id="mainActual" placeholder="实际完成" oninput="liveCalc()">
+            <div class="rate-tag" id="mainRateDisp">0%</div>
+        </div>
+    </div>
+
+    <!-- 非手机 -->
+    <div class="form-group">
+        <label>非手机GMV (占比10%)</label>
+        <div class="input-group">
+            <input type="number" id="gmvTarget" placeholder="目标值" oninput="liveCalc()">
+            <input type="number" id="gmvActual" placeholder="实际完成" oninput="liveCalc()">
+            <div class="rate-tag" id="gmvRateDisp">0%</div>
+        </div>
+    </div>
+
+    <div style="text-align:right; font-size:12px; color:#999; margin-bottom:10px;">
+        当前销售指标综合达成率：<span id="salesSectionScore" style="color:#ff6700; font-weight:bold">0%</span> (已含130%封顶)
+    </div>
+
+    <!-- 板块2：运营指标 (20%) -->
+    <div class="section-title">2. 运营指标 (占比20%)</div>
+    
+    <div class="form-group">
+        <label>DSR评分 (权重10%)</label>
+        <div class="input-group">
+            <input type="number" id="dsrVal" placeholder="例如：9.8" step="0.1">
+            <div class="rate-tag" style="background:#fff3e0; color:#d95e00">若≤9得0分</div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>库存周转天数 (权重10%)</label>
+        <div class="input-group">
+            <input type="number" id="stockDays" placeholder="例如：25" step="1">
+            <div class="rate-tag" style="width: auto; font-size:12px;">21-28天满分</div>
+        </div>
+    </div>
+
+    <!-- 板块3：管理 & 扣分 -->
+    <div class="section-title">3. 管理与扣分</div>
+    
+    <div class="form-group">
+        <label>分公司评价 (权重10%)</label>
+        <select id="branchLevel">
+            <option value="10">S (得10分)</option>
+            <option value="9">A (得9分)</option>
+            <option value="7" selected>B (得7分)</option>
+            <option value="2">C (得2分)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>违规扣分 (直接扣除总分)</label>
+        <input type="number" id="deduction" placeholder="0">
+    </div>
+
+    <!-- 计算按钮 -->
+    <div class="btn-group">
+        <button id="calcBtn" onclick="calculate()">计算工资</button>
+        <button id="resetBtn" onclick="resetForm()">重置</button>
+    </div>
+
+    <!-- 结果显示 -->
+    <div class="result-box" id="resultArea" style="display:none;">
+        <h3>最终预估工资</h3>
+        <div class="final-price" id="finalMoney">¥ 0.00</div>
+        
+        <div style="background:white; padding:10px; border-radius:6px; margin-top:15px;">
+            <div class="detail-row">
+                <span>总考核得分：</span>
+                <span class="score-highlight" id="totalScoreDisp">0 分</span>
+            </div>
+            <div class="detail-row">
+                <span>绩效系数：</span>
+                <span id="coeffDisp">0</span>
+            </div>
+            <div class="detail-row">
+                <span>餐补(固定)：</span>
+                <span>+695</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 简易缺口计算 (仅针对销售指标) -->
+    <div class="gap-calculator" id="gapBox">
+        <div class="gap-title">🎯 销售指标缺口分析 (基于当前销售权重)</div>
+        <div class="gap-item" id="salesGapText">填写数据后自动分析...</div>
+    </div>
+
+    <!-- 历史记录 -->
+    <div class="history-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4>历史记录</h4>
+            <span style="font-size:12px; color:#999; cursor:pointer" onclick="clearHistory()">[清空]</span>
+        </div>
+        <div class="history-list" id="historyList"></div>
+    </div>
+
+</div>
+
+<script>
+    // 实时计算销售达成率显示，及简单的缺口提示
+    function liveCalc() {
+        const sales = getRate('salesTarget', 'salesActual');
+        const main = getRate('mainTarget', 'mainActual');
+        const gmv = getRate('gmvTarget', 'gmvActual');
+
+        updateRateTag('salesRateDisp', sales);
+        updateRateTag('mainRateDisp', main);
+        updateRateTag('gmvRateDisp', gmv);
+
+        // 计算加权达成率 (50:40:10)
+        let weightedRate = (sales.rate * 0.5) + (main.rate * 0.4) + (gmv.rate * 0.1);
+        // 封顶 130%
+        let finalRate = Math.min(weightedRate, 130);
+        
+        document.getElementById('salesSectionScore').innerText = finalRate.toFixed(2) + '%';
+        
+        // 缺口简析
+        const gapEl = document.getElementById('salesGapText');
+        if(finalRate >= 100) {
+            gapEl.innerHTML = "<span style='color:#67c23a'>销售指标已达标 100% (含加权)，继续保持！</span>";
+        } else {
+            // 简单反推：假设只靠销售额提升
+            // 还需要的分数
+            let needScore = 100 - finalRate; 
+            // 销售额权重0.5，所以需要提升的达成率 = needScore / 0.5
+            let needSalesRateIncrease = needScore / 0.5;
             
-            return (mainPushRate * 0.4) + (salesRate * 0.3) + (nonPhoneRate * 0.1) + (dsrRate * 0.1) + (dosRate * 0.1);
-        }
-
-        // 计算单个板块的缺口（独立计算，互不影响）
-        function calcSingleGap(module, targetId, actualId, gapId, tipId) {
-            const { rate: currentRate, target, actual } = calcSingleRate(targetId, actualId, `${module}RateTag`);
-            const otherRates = {};
-            // 获取其他板块的达成率用于反推
-            const modules = ['mainPush', 'sales', 'nonPhone', 'dsr', 'dos'];
-            modules.forEach(m => {
-                if(m !== module) {
-                    otherRates[m] = calcSingleRate(`${m}Target`, `${m}Actual`, `${m}RateTag`).rate;
-                }
-            });
-
-            const totalRate = calcTotalRate();
-            const gapDetailEl = document.getElementById(gapId);
-            const gapTipEl = document.getElementById(tipId);
-            const weightMap = { mainPush: 0.4, sales: 0.3, nonPhone: 0.1, dsr: 0.1, dos: 0.1 };
-            const weight = weightMap[module];
-
-            if (target <= 0) {
-                gapDetailEl.innerHTML = `待补充任务目标`;
-                gapTipEl.textContent = '';
-                return;
-            }
-
-            // 反推逻辑
-            let otherSum = 0;
-            modules.forEach(m => {
-                if(m !== module) otherSum += (otherRates[m] || 0) * weightMap[m];
-            });
-
-            let needRate = (70 - otherSum) / weight;
-            needRate = Math.min(needRate, 130);
-            needRate = Math.max(needRate, 0);
-
-            const needActual = (needRate / 100) * target;
-            const gap = Math.max(0, needActual - actual);
+            // 换算成金额
+            let salesTarget = Number(document.getElementById('salesTarget').value);
+            let salesActual = Number(document.getElementById('salesActual').value);
             
-            const isFloat = module === 'dsr' || module === 'dos';
-            const actualFormatted = actual.toFixed(isFloat ? 1 : 0);
-            const needActualFormatted = needActual.toFixed(isFloat ? 1 : 0);
-            const gapFormatted = gap.toFixed(isFloat ? 1 : 0);
-            const unit = isFloat ? '' : '元';
-
-            if (totalRate >= 70) {
-                gapDetailEl.innerHTML = `当前已达标70%，无需补充！`;
-                gapTipEl.textContent = `当前综合达成率：${totalRate.toFixed(1)}%`;
-            } else if (needRate <= currentRate) {
-                gapDetailEl.innerHTML = `当前达成率已足够，无需补充！`;
-                gapTipEl.textContent = `当前达成率：${currentRate.toFixed(1)}%`;
+            if(salesTarget > 0) {
+                let needMoney = salesTarget * (needSalesRateIncrease / 100);
+                gapEl.innerHTML = `当前加权达成率 <b>${finalRate.toFixed(1)}%</b>。<br>
+                                   若仅提升销售额，还需约 <b>${Math.ceil(needMoney)}</b> 元可让销售指标满分。`;
             } else {
-                gapDetailEl.innerHTML = `需补充：<span class="gap-number">${gapFormatted}${unit}</span>（当前${actualFormatted}${unit}，需${needActualFormatted}${unit}）`;
-                gapTipEl.textContent = `需达成率：${needRate.toFixed(1)}%（当前：${currentRate.toFixed(1)}%）`;
+                gapEl.innerText = "请先填写销售额目标进行分析。";
             }
         }
+    }
 
-        // 批量计算所有板块缺口
-        function calculateAllGaps() {
-            calcSingleGap('mainPush', 'mainPushTarget', 'mainPushActual', 'mainPushGap', 'mainPushGapTip');
-            calcSingleGap('sales', 'salesTarget', 'salesActual', 'salesGap', 'salesGapTip');
-            calcSingleGap('nonPhone', 'nonPhoneTarget', 'nonPhoneActual', 'nonPhoneGap', 'nonPhoneGapTip');
-            calcSingleGap('dsr', 'dsrTarget', 'dsrActual', 'dsrGap', 'dsrGapTip');
-            calcSingleGap('dos', 'dosTarget', 'dosActual', 'dosGap', 'dosGapTip');
+    function getRate(tid, aid) {
+        let t = Number(document.getElementById(tid).value);
+        let a = Number(document.getElementById(aid).value);
+        if(t <= 0) return { rate: 0, val: 0 };
+        let r = (a / t) * 100;
+        return { rate: r, val: a };
+    }
 
-            const totalRate = calcTotalRate();
-            const rateGap = Math.max(0, 70 - totalRate);
-            const gapSummary = document.getElementById('gapSummary');
-            if (totalRate >= 70) {
-                gapSummary.innerHTML = `当前综合达成率：<span class="gap-success">${totalRate.toFixed(1)}%</span>，已达到70%门槛，可拿绩效！`;
-            } else {
-                gapSummary.innerHTML = `当前综合达成率：<span>${totalRate.toFixed(1)}%</span>，距离70%门槛还差：<span>${rateGap.toFixed(1)}%</span>`;
-            }
+    function updateRateTag(id, obj) {
+        document.getElementById(id).innerText = obj.rate.toFixed(1) + '%';
+    }
 
-            const baseSalary = getInputVal('baseSalary');
-            document.getElementById('performanceBase').textContent = `¥ ${(baseSalary * 0.5).toFixed(2)}`;
+    function calculate() {
+        // 1. 获取基本工资
+        let base = Number(document.getElementById('baseSalary').value);
+        if(base <= 0) { alert('请输入基本工资'); return; }
+
+        // 2. 计算销售得分 (权重70%)
+        // 公式：销售综合达成率 * 100 * 70%
+        // 注意：图片显示"指标得分 = 门店综合达成率 x 100"。然后总分是加权。
+        // 我们统一换算成 100分制 贡献分。
+        // 销售部分满分70分（100%情况）。如果做到130%，就是 130 * 0.7 = 91分。
+        
+        let salesR = getRate('salesTarget', 'salesActual').rate;
+        let mainR = getRate('mainTarget', 'mainActual').rate;
+        let gmvR = getRate('gmvTarget', 'gmvActual').rate;
+        
+        // 综合达成率 = 销售*50% + 主推*40% + 非手机*10%
+        let storeRate = (salesR * 0.5) + (mainR * 0.4) + (gmvR * 0.1);
+        // 封顶 130%
+        storeRate = Math.min(storeRate, 130);
+        
+        // 销售部分对总分的贡献 (权重70%)
+        // 如果综合达成率是100%，得分100，权重70%，即贡献70分。
+        let scorePart1 = storeRate * 0.7; 
+
+        // 3. 计算 DSR (权重10%)
+        // 公式：若>9: 100*(X-9)。 若<=9: 0。
+        // 权重10%，意味着满分100的话贡献10分。
+        let dsrVal = Number(document.getElementById('dsrVal').value) || 0;
+        let dsrRawScore = 0;
+        if(dsrVal > 9) {
+            dsrRawScore = (dsrVal - 9) * 100;
+            // 逻辑上DSR最高10分，所以rawScore最高100。
+            if(dsrRawScore > 100) dsrRawScore = 100; 
+        }
+        let scorePart2 = dsrRawScore * 0.1; // 贡献分
+
+        // 4. 库存周转 (权重10%)
+        let days = Number(document.getElementById('stockDays').value) || 0;
+        let stockRawScore = 0;
+        if(days === 0) {
+            stockRawScore = 0; // 未填默认为0
+        } else if(days >= 21 && days <= 28) {
+            stockRawScore = 100;
+        } else if((days > 28 && days <= 35) || (days >= 14 && days < 21)) {
+            stockRawScore = 80;
+        } else if(days > 35 && days <= 42) {
+            stockRawScore = 60;
+        } else if((days > 42 && days <= 49) || (days >= 7 && days < 14)) {
+            stockRawScore = 40;
+        } else {
+            stockRawScore = 0;
+        }
+        let scorePart3 = stockRawScore * 0.1;
+
+        // 5. 分公司评价 (权重10%)
+        // S=10, A=9, B=7, C=2. 这里已经是贡献分了，不需要再乘权重，或者理解为 100分制下的 100,90,70,20 乘 0.1
+        // 下拉框的值我直接设为了 10, 9, 7, 2
+        let scorePart4 = Number(document.getElementById('branchLevel').value);
+
+        // 6. 扣分
+        let deduct = Number(document.getElementById('deduction').value) || 0;
+
+        // 总分
+        let totalScore = scorePart1 + scorePart2 + scorePart3 + scorePart4 - deduct;
+        
+        // 7. 计算薪资
+        // 规则：<70 无绩效； 70-100 按比例； >=100 1.2倍
+        // 绩效基数 = Base * 50%
+        let perfBase = base * 0.5;
+        let finalPerf = 0;
+        let coeff = 0;
+
+        if(totalScore < 70) {
+            finalPerf = 0;
+            coeff = 0;
+        } else if (totalScore < 100) {
+            coeff = totalScore / 100;
+            finalPerf = perfBase * coeff;
+        } else {
+            coeff = 1.2;
+            finalPerf = perfBase * 1.2;
         }
 
-        function checkMissingInputs() {
-            const missing = [];
-            const baseSalary = getInputVal('baseSalary');
-            if (baseSalary <= 0) missing.push('基本工资');
-            return missing;
-        }
+        let meal = 695;
+        let finalSalary = base + finalPerf + meal;
 
-        // 历史记录相关
-        function getHistory() {
-            try {
-                return JSON.parse(localStorage.getItem('salaryCalcHistory')) || [];
-            } catch(e) { return []; }
-        }
+        // 显示结果
+        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('finalMoney').innerText = '¥ ' + finalSalary.toFixed(2);
+        document.getElementById('totalScoreDisp').innerText = totalScore.toFixed(2);
+        
+        let coeffText = "";
+        if(coeff === 0) coeffText = "0 (未达70分)";
+        else if(coeff === 1.2) coeffText = "1.2 (达标激励)";
+        else coeffText = coeff.toFixed(3);
+        
+        document.getElementById('coeffDisp').innerText = coeffText;
 
-        function saveHistory(record) {
-            const history = getHistory();
-            history.unshift(record);
-            if (history.length > 20) history.pop();
-            localStorage.setItem('salaryCalcHistory', JSON.stringify(history));
-            renderHistory();
-        }
+        // 保存历史
+        saveHistory(base, totalScore, finalSalary);
+        
+        // 滚动到底部
+        document.getElementById('resultArea').scrollIntoView({behavior: "smooth"});
+    }
 
-        // 核心修改：渲染历史记录（增加点击事件）
-        function renderHistory() {
-            const historyList = document.getElementById('historyList');
-            const history = getHistory();
-            if (history.length === 0) {
-                historyList.innerHTML = '<div style="text-align: center; padding: 20px; color: #718096; font-size: 14px;">暂无历史记录</div>';
-                return;
-            }
-            historyList.innerHTML = history.map((item, index) => `
-                <div class="history-item" onclick="restoreHistory(${index})" title="点击恢复此数据">
-                    <div class="history-header">
-                        <span>${item.time}</span>
-                        <span>¥${item.finalSalary}</span>
-                    </div>
-                    <div class="history-detail">
-                        基本工资：${item.baseSalary}元 | 综合达成率：${item.totalRate}% | 
-                        绩效：${item.actualPerformance}元
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // 新增：恢复历史记录函数
-        window.restoreHistory = function(index) {
-            const history = getHistory();
-            const record = history[index];
-            if (!record || !record.inputData) {
-                alert('该条记录格式较旧或已损坏，无法完全恢复。');
-                return;
-            }
-
-            if (confirm(`是否确认将数据恢复到：${record.time} 的状态？\n这将覆盖当前输入框中的内容。`)) {
-                // 回填数据
-                const data = record.inputData;
-                
-                // 设置每个输入框的值（如果没有则为空）
-                document.getElementById('baseSalary').value = data.baseSalary || '';
-                
-                document.getElementById('mainPushTarget').value = data.mainPushTarget || '';
-                document.getElementById('mainPushActual').value = data.mainPushActual || '';
-                
-                document.getElementById('salesTarget').value = data.salesTarget || '';
-                document.getElementById('salesActual').value = data.salesActual || '';
-                
-                document.getElementById('nonPhoneTarget').value = data.nonPhoneTarget || '';
-                document.getElementById('nonPhoneActual').value = data.nonPhoneActual || '';
-                
-                document.getElementById('dsrTarget').value = data.dsrTarget || '';
-                document.getElementById('dsrActual').value = data.dsrActual || '';
-                
-                document.getElementById('dosTarget').value = data.dosTarget || '';
-                document.getElementById('dosActual').value = data.dosActual || '';
-
-                // 触发一次计算以更新UI状态（缺口、达成率等）
-                calculateAllGaps();
-                
-                // 滚动到顶部
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 历史记录功能
+    function saveHistory(base, score, salary) {
+        let list = JSON.parse(localStorage.getItem('mi_salary_history_v2') || "[]");
+        let item = {
+            time: new Date().toLocaleString(),
+            base: base,
+            score: score.toFixed(1),
+            salary: salary.toFixed(0),
+            // 保存输入状态以便恢复
+            inputs: {
+                salesT: document.getElementById('salesTarget').value,
+                salesA: document.getElementById('salesActual').value,
+                mainT: document.getElementById('mainTarget').value,
+                mainA: document.getElementById('mainActual').value,
+                gmvT: document.getElementById('gmvTarget').value,
+                gmvA: document.getElementById('gmvActual').value,
+                dsr: document.getElementById('dsrVal').value,
+                days: document.getElementById('stockDays').value,
+                branch: document.getElementById('branchLevel').value
             }
         };
+        list.unshift(item);
+        if(list.length > 10) list.pop();
+        localStorage.setItem('mi_salary_history_v2', JSON.stringify(list));
+        renderHistory();
+    }
 
-        function copyText(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                alert('复制成功！');
-            } catch (err) {
-                alert('复制失败，请手动复制');
-            }
-            document.body.removeChild(textarea);
+    function renderHistory() {
+        let list = JSON.parse(localStorage.getItem('mi_salary_history_v2') || "[]");
+        let html = list.map((item, index) => `
+            <div class="history-item" onclick="restore(${index})">
+                <span>${item.time.slice(5,16)}</span>
+                <span>${item.score}分</span>
+                <span style="font-weight:bold">¥${item.salary}</span>
+            </div>
+        `).join('');
+        document.getElementById('historyList').innerHTML = html || '<div style="text-align:center;padding:10px;color:#999">暂无记录</div>';
+    }
+
+    function restore(index) {
+        let list = JSON.parse(localStorage.getItem('mi_salary_history_v2') || "[]");
+        let data = list[index].inputs;
+        if(data) {
+            document.getElementById('salesTarget').value = data.salesT;
+            document.getElementById('salesActual').value = data.salesA;
+            document.getElementById('mainTarget').value = data.mainT;
+            document.getElementById('mainActual').value = data.mainA;
+            document.getElementById('gmvTarget').value = data.gmvT;
+            document.getElementById('gmvActual').value = data.gmvA;
+            document.getElementById('dsrVal').value = data.dsr;
+            document.getElementById('stockDays').value = data.days;
+            document.getElementById('branchLevel').value = data.branch;
+            liveCalc(); // 触发计算显示
+            alert('已恢复该条记录数据，请点击“计算”查看结果');
         }
+    }
 
-        function calculateFinalSalary() {
-            const calcStatusEl = document.getElementById('calcStatus');
-            calcStatusEl.style.display = 'block';
+    function clearHistory() {
+        localStorage.removeItem('mi_salary_history_v2');
+        renderHistory();
+    }
 
-            // 1. 仅检查基本工资
-            const missing = checkMissingInputs();
-            if (missing.length > 0) {
-                calcStatusEl.style.display = 'none';
-                alert(`请填写：${missing.join('、')}`);
-                showError('baseSalary', 'baseSalaryError');
-                return;
-            }
+    function resetForm() {
+        document.querySelectorAll('input').forEach(i => i.value = '');
+        document.getElementById('resultArea').style.display = 'none';
+        liveCalc();
+    }
 
-            hideAllErrors();
+    // 初始化
+    renderHistory();
+</script>
 
-            try {
-                // 2. 无论其他项填没填，强制执行计算
-                const totalRate = calcTotalRate();
-                document.getElementById('totalRate').textContent = `${totalRate.toFixed(1)}%`;
-
-                // 3. 计算绩效
-                const baseSalary = getInputVal('baseSalary');
-                const performanceBase = baseSalary * 0.5;
-                let actualPerformance = 0;
-                let performanceStatus = '';
-
-                if (totalRate < 70) {
-                    actualPerformance = 0;
-                    performanceStatus = '(未达70%，无绩效)';
-                } else if (totalRate < 100) {
-                    actualPerformance = performanceBase * (totalRate / 100);
-                    performanceStatus = `(达成${totalRate.toFixed(1)}%，按比例发放)`;
-                } else {
-                    actualPerformance = performanceBase * 1.2;
-                    performanceStatus = '(达成≥100%，1.2倍绩效)';
-                }
-
-                document.getElementById('actualPerformance').textContent = `¥ ${actualPerformance.toFixed(2)}`;
-                document.getElementById('performanceStatus').textContent = performanceStatus;
-
-                const mealSubsidy = 695;
-                const finalSalary = baseSalary + actualPerformance + mealSubsidy;
-                document.getElementById('resultValue').textContent = `¥ ${finalSalary.toFixed(2)}`;
-
-                // 4. 保存历史记录（核心修改：保存所有输入值）
-                const inputData = {
-                    baseSalary: document.getElementById('baseSalary').value,
-                    mainPushTarget: document.getElementById('mainPushTarget').value,
-                    mainPushActual: document.getElementById('mainPushActual').value,
-                    salesTarget: document.getElementById('salesTarget').value,
-                    salesActual: document.getElementById('salesActual').value,
-                    nonPhoneTarget: document.getElementById('nonPhoneTarget').value,
-                    nonPhoneActual: document.getElementById('nonPhoneActual').value,
-                    dsrTarget: document.getElementById('dsrTarget').value,
-                    dsrActual: document.getElementById('dsrActual').value,
-                    dosTarget: document.getElementById('dosTarget').value,
-                    dosActual: document.getElementById('dosActual').value,
-                };
-
-                saveHistory({
-                    time: new Date().toLocaleString(),
-                    baseSalary: baseSalary,
-                    totalRate: totalRate.toFixed(1),
-                    actualPerformance: actualPerformance.toFixed(2),
-                    finalSalary: finalSalary.toFixed(2),
-                    inputData: inputData // 保存详细数据
-                });
-
-                // 5. 刷新缺口方案
-                calculateAllGaps();
-
-                calcStatusEl.style.display = 'none';
-                
-            } catch (error) {
-                calcStatusEl.style.display = 'none';
-                alert('计算出错，请检查输入数字是否正确');
-                console.error(error);
-            }
-        }
-
-        function showError(inputId, errorId) {
-            document.getElementById(inputId).classList.add('error');
-            document.getElementById(errorId).style.display = 'block';
-        }
-
-        function hideError(inputId, errorId) {
-            document.getElementById(inputId).classList.remove('error');
-            document.getElementById(errorId).style.display = 'none';
-        }
-
-        function hideAllErrors() {
-            hideError('baseSalary', 'baseSalaryError');
-            hideError('mainPushTarget', 'mainPushError');
-            hideError('salesTarget', 'salesError');
-            hideError('nonPhoneTarget', 'nonPhoneError');
-            hideError('dsrTarget', 'dsrError');
-            hideError('dosTarget', 'dosError');
-        }
-
-        function resetAll() {
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => input.value = '');
-
-            document.getElementById('mainPushRateTag').textContent = '达成率：--%';
-            document.getElementById('salesRateTag').textContent = '达成率：--%';
-            document.getElementById('nonPhoneRateTag').textContent = '达成率：--%';
-            document.getElementById('dsrRateTag').textContent = '达成率：--%';
-            document.getElementById('dosRateTag').textContent = '达成率：--%';
-
-            document.getElementById('performanceBase').textContent = '¥ 0.00';
-            document.getElementById('totalRate').textContent = '--%';
-            document.getElementById('actualPerformance').textContent = '¥ 0.00';
-            document.getElementById('performanceStatus').textContent = '';
-            document.getElementById('resultValue').textContent = '¥ 0.00';
-
-            document.getElementById('gapSummary').innerHTML = '请填写至少1个板块的目标和实际完成，缺口自动计算';
-            
-            // 重置缺口文字
-            const details = ['mainPush', 'sales', 'nonPhone', 'dsr', 'dos'];
-            const names = ['主推', '销售额', '非手机', 'DSR', 'DOS'];
-            details.forEach((d, i) => {
-                document.getElementById(`${d}Gap`).innerHTML = `待补充${names[i]}的任务目标和实际完成`;
-                document.getElementById(`${d}GapTip`).textContent = '';
-            });
-
-            hideAllErrors();
-            document.getElementById('calcStatus').style.display = 'none';
-        }
-
-        // 绑定输入框事件
-        const inputIds = [
-            'baseSalary', 'mainPushTarget', 'mainPushActual',
-            'salesTarget', 'salesActual', 'nonPhoneTarget',
-            'nonPhoneActual', 'dsrTarget', 'dsrActual',
-            'dosTarget', 'dosActual'
-        ];
-        inputIds.forEach(id => {
-            const input = document.getElementById(id);
-            if(input) {
-                input.addEventListener('input', calculateAllGaps);
-                input.addEventListener('paste', calculateAllGaps);
-                input.addEventListener('blur', calculateAllGaps);
-            }
-        });
-
-        // 页面加载逻辑
-        window.onload = function() {
-            renderHistory();
-            calculateAllGaps();
-        };
-
-        document.getElementById('calcBtn').addEventListener('click', calculateFinalSalary);
-        document.getElementById('resetBtn').addEventListener('click', resetAll);
-        document.getElementById('copyResult').addEventListener('click', () => {
-            const resultText = document.getElementById('resultValue').textContent.replace('¥ ', '');
-            copyText(resultText);
-        });
-        document.getElementById('clearHistory').addEventListener('click', () => {
-            if (confirm('确定要清空历史记录吗？')) {
-                localStorage.removeItem('salaryCalcHistory');
-                renderHistory();
-            }
-        });
-    </script>
 </body>
 </html>
